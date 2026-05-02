@@ -158,7 +158,15 @@ function Update-VersionInfo {
 
         Set-Content -Path $versionFilePath -Value $versionInfoJson -Force
         $version_number= $versionInfo.version_number
-        Write-Success "Version updated to $version_number" 
+        Write-Success "Version updated to $version_number"
+
+        # Copy version.json to Output\ so it is always in sync with the installers
+        $outputFolder = Join-Path -Path $scriptRoot -ChildPath "Output"
+        if (-not (Test-Path -Path $outputFolder)) {
+            New-Item -ItemType Directory -Path $outputFolder -Force | Out-Null
+        }
+        Copy-Item -Path $versionFilePath -Destination $outputFolder -Force
+        Write-Success "version.json copied to Output\"
     }
     catch {
         Write-Error "Failed to update version information: $_"
@@ -562,8 +570,7 @@ function Publish-LinuxArm64 {
         New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
     }
 
-    $versionSuffix = if ([string]::IsNullOrEmpty($Version)) { "" } else { "-$Version" }
-    $tarFileName = "ComRouterLinux-arm64${versionSuffix}.tar.gz"
+    $tarFileName = "ComRouterLinux-arm64.tar.gz"
     $tarFilePath = Join-Path -Path $outputDir -ChildPath $tarFileName
 
     Write-Info "Creating $tarFileName..."
