@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ComRouter — Connetti i tuoi dispositivi</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1a6bff;
+      --blue-dk: #0f4bd4;
+      --blue-lt: #e8f0ff;
+      --teal:    #0cbfba;
+      --dark:    #0e1a2b;
+      --mid:     #2d3e53;
+      --text:    #2c3e50;
+      --muted:   #6b7e94;
+      --bg:      #f5f8ff;
+      --white:   #ffffff;
+      --shadow:  0 4px 24px rgba(26,107,255,.12);
+      --radius:  14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(14,26,43,.96);
+      backdrop-filter: blur(10px);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-brand {
+      font-size: 1.25rem; font-weight: 700; color: var(--white);
+      letter-spacing: -.3px;
+    }
+    .nav-brand span { color: var(--teal); }
+    nav ul { list-style: none; display: flex; gap: 1.8rem; }
+    nav a {
+      color: rgba(255,255,255,.75); text-decoration: none;
+      font-size: .9rem; transition: color .2s;
+    }
+    nav a:hover { color: var(--white); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--dark) 0%, #163058 60%, #0f3d6e 100%);
+      color: var(--white);
+      padding: 7rem 2rem 6rem;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,107,255,.18), transparent);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(12,191,186,.18); color: var(--teal);
+      border: 1px solid rgba(12,191,186,.35);
+      border-radius: 20px; padding: .25rem 1rem;
+      font-size: .8rem; font-weight: 600; letter-spacing: .5px;
+      text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 800; line-height: 1.15;
+      letter-spacing: -.5px; margin-bottom: 1.25rem;
+    }
+    .hero h1 span { color: var(--teal); }
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: rgba(255,255,255,.78);
+      max-width: 680px; margin: 0 auto 2.5rem;
+    }
+    .btn-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: .75rem 2rem;
+      border-radius: 8px; font-weight: 600; font-size: 1rem;
+      text-decoration: none; transition: all .2s; cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--blue); color: var(--white);
+      box-shadow: 0 4px 16px rgba(26,107,255,.4);
+    }
+    .btn-primary:hover { background: var(--blue-dk); transform: translateY(-2px); }
+    .btn-outline {
+      background: transparent; color: var(--white);
+      border: 2px solid rgba(255,255,255,.4);
+    }
+    .btn-outline:hover { border-color: var(--white); background: rgba(255,255,255,.08); }
+
+    /* ── SECTION SHARED ── */
+    section { padding: 5rem 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      text-align: center; font-size: .78rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--blue); margin-bottom: .5rem;
+    }
+    .section-title {
+      text-align: center; font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 800; color: var(--dark); margin-bottom: 1rem;
+    }
+    .section-sub {
+      text-align: center; color: var(--muted);
+      max-width: 600px; margin: 0 auto 3rem;
+    }
+
+    /* ── WHAT ── */
+    .what { background: var(--white); }
+    .what-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .what-card {
+      background: var(--bg); border-radius: var(--radius);
+      padding: 2rem 1.5rem; text-align: center;
+      border: 1px solid #dde8ff; transition: transform .2s, box-shadow .2s;
+    }
+    .what-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+    .what-icon {
+      width: 60px; height: 60px; border-radius: 14px;
+      background: var(--blue-lt); display: flex; align-items: center;
+      justify-content: center; margin: 0 auto 1rem; font-size: 1.8rem;
+    }
+    .what-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; color: var(--dark); }
+    .what-card p { font-size: .9rem; color: var(--muted); }
+
+    /* ── HOW ── */
+    .how { background: var(--bg); }
+    .how-flow {
+      display: flex; align-items: flex-start; justify-content: center;
+      gap: 0; flex-wrap: wrap; margin-top: 3rem;
+    }
+    .how-step {
+      flex: 1 1 180px; max-width: 220px;
+      text-align: center; padding: 1.5rem 1rem; position: relative;
+    }
+    .how-step:not(:last-child)::after {
+      content: '→';
+      position: absolute; right: -10px; top: 2.2rem;
+      font-size: 1.4rem; color: var(--blue); font-weight: 700;
+    }
+    .step-num {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--blue); color: var(--white);
+      font-weight: 800; font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto .75rem;
+    }
+    .how-step h4 { font-size: .95rem; font-weight: 700; color: var(--dark); margin-bottom: .4rem; }
+    .how-step p { font-size: .85rem; color: var(--muted); }
+
+    /* ── USE CASES ── */
+    .cases { background: var(--white); }
+    .cases-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 1.75rem; margin-top: 3rem;
+    }
+    .case-card {
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid #dde8ff;
+      box-shadow: 0 2px 12px rgba(26,107,255,.07);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .case-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+    .case-header {
+      padding: 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .case-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .case-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); }
+    .case-header p { font-size: .82rem; color: var(--muted); margin-top: .15rem; }
+    .case-body { padding: 0 1.5rem 1.5rem; }
+    .case-scenario {
+      background: var(--bg); border-radius: 10px; padding: 1rem 1.1rem;
+      font-size: .88rem; color: var(--text); margin-bottom: .75rem;
+      border-left: 3px solid var(--blue);
+    }
+    .case-scenario strong { color: var(--dark); display: block; margin-bottom: .2rem; }
+    .case-tag {
+      display: inline-block; font-size: .75rem; font-weight: 600;
+      padding: .2rem .7rem; border-radius: 20px; margin-top: .75rem;
+    }
+
+    /* card colors */
+    .c-indigo .case-header { background: linear-gradient(135deg,#eef2ff,#e0e7ff); }
+    .c-indigo .case-icon   { background: #6366f1; color: #fff; }
+    .c-indigo .case-tag    { background: #e0e7ff; color: #4338ca; }
+
+    .c-green .case-header  { background: linear-gradient(135deg,#ecfdf5,#d1fae5); }
+    .c-green .case-icon    { background: #10b981; color: #fff; }
+    .c-green .case-tag     { background: #d1fae5; color: #065f46; }
+
+    .c-orange .case-header { background: linear-gradient(135deg,#fff7ed,#fed7aa); }
+    .c-orange .case-icon   { background: #f97316; color: #fff; }
+    .c-orange .case-tag    { background: #fed7aa; color: #9a3412; }
+
+    .c-sky .case-header    { background: linear-gradient(135deg,#f0f9ff,#bae6fd); }
+    .c-sky .case-icon      { background: #0ea5e9; color: #fff; }
+    .c-sky .case-tag       { background: #bae6fd; color: #0c4a6e; }
+
+    .c-purple .case-header { background: linear-gradient(135deg,#fdf4ff,#f3e8ff); }
+    .c-purple .case-icon   { background: #a855f7; color: #fff; }
+    .c-purple .case-tag    { background: #f3e8ff; color: #6b21a8; }
+
+    .c-rose .case-header   { background: linear-gradient(135deg,#fff1f2,#ffe4e6); }
+    .c-rose .case-icon     { background: #f43f5e; color: #fff; }
+    .c-rose .case-tag      { background: #ffe4e6; color: #9f1239; }
+
+    /* ── FEATURES ── */
+    .features { background: var(--bg); }
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem; margin-top: 3rem;
+    }
+    .feat-item {
+      background: var(--white); border-radius: 12px;
+      padding: 1.4rem 1.2rem;
+      border: 1px solid #dde8ff;
+      display: flex; align-items: flex-start; gap: .9rem;
+    }
+    .feat-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--teal); flex-shrink: 0; margin-top: .5rem;
+    }
+    .feat-item h4 { font-size: .92rem; font-weight: 700; color: var(--dark); margin-bottom: .2rem; }
+    .feat-item p  { font-size: .82rem; color: var(--muted); }
+
+    /* ── DOWNLOAD ── */
+    .download { background: linear-gradient(135deg, var(--dark), #163058); color: var(--white); }
+    .download .section-label { color: var(--teal); }
+    .download .section-title { color: var(--white); }
+    .download .section-sub   { color: rgba(255,255,255,.65); }
+    .dl-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .dl-card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius); padding: 2rem 1.5rem; text-align: center;
+      transition: background .2s;
+    }
+    .dl-card:hover { background: rgba(255,255,255,.1); }
+    .dl-os { font-size: 2.5rem; margin-bottom: .75rem; }
+    .dl-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .3rem; }
+    .dl-card p  { font-size: .85rem; color: rgba(255,255,255,.55); margin-bottom: 1.25rem; }
+    .btn-dl {
+      display: inline-block; padding: .6rem 1.5rem;
+      background: var(--blue); color: var(--white);
+      border-radius: 8px; font-weight: 600; font-size: .9rem;
+      text-decoration: none; transition: background .2s;
+    }
+    .btn-dl:hover { background: var(--blue-dk); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #070e18; color: rgba(255,255,255,.45);
+      text-align: center; padding: 2rem;
+      font-size: .85rem;
+    }
+    footer a { color: rgba(255,255,255,.65); text-decoration: none; }
+    footer a:hover { color: var(--white); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .how-step:not(:last-child)::after { display: none; }
+      nav ul { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand"><span>Com</span>Router</div>
+  <ul>
+    <li><a href="#cosa-fa">Come funziona</a></li>
+    <li><a href="#casi-uso">Casi d'uso</a></li>
+    <li><a href="#funzionalita">Funzionalità</a></li>
+    <li><a href="#download">Download</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div style="position:relative;z-index:1">
+    <div class="hero-badge">Soluzione professionale di routing seriale</div>
+    <h1>Fai parlare i tuoi<br><span>dispositivi tra loro</span></h1>
+    <p>
+      ComRouter collega automaticamente strumenti, macchinari e sistemi che usano protocolli diversi —
+      senza modificare il codice, senza hardware aggiuntivo.
+    </p>
+    <div class="btn-group">
+      <a href="#download" class="btn btn-primary">Scarica gratis</a>
+      <a href="#casi-uso" class="btn btn-outline">Scopri i casi d'uso</a>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT IT IS -->
+<section class="what" id="cosa-fa">
+  <div class="container">
+    <div class="section-label">Cos'è ComRouter</div>
+    <h2 class="section-title">Un ponte intelligente tra i tuoi dispositivi</h2>
+    <p class="section-sub">
+      Ogni giorno macchine, sensori e sistemi cercano di comunicare — ma parlano lingue diverse.
+      ComRouter fa da interprete e smistatore, in tempo reale.
+    </p>
+    <div class="what-grid">
+      <div class="what-card">
+        <div class="what-icon">🔌</div>
+        <h3>Porta seriale (RS-232/RS-485)</h3>
+        <p>Vecchi macchinari industriali, bilance, stampanti, lettori di codici a barre — tutti connessi in pochi clic.</p>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">🌐</div>
+        <h3>Rete TCP/IP</h3>
+        <p>Invia e ricevi dati sulla rete locale o da remoto, senza cavi seriali dedicati tra edificio e edificio.</p>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">📡</div>
+        <h3>UDP Broadcast</h3>
+        <p>Distribuisci gli stessi dati a più destinatari contemporaneamente — ideale per sistemi di monitoraggio.</p>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">⚙️</div>
+        <h3>Avvio di programmi</h3>
+        <p>Quando arriva un certo comando, ComRouter può lanciare automaticamente un'applicazione o uno script.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="container">
+    <div class="section-label">Come funziona</div>
+    <h2 class="section-title">Tre passi, zero programmazione</h2>
+    <p class="section-sub">Configuri una sola volta le regole di instradamento, poi ComRouter lavora da solo.</p>
+    <div class="how-flow">
+      <div class="how-step">
+        <div class="step-num">1</div>
+        <h4>Sorgente</h4>
+        <p>Scegli da dove arrivano i dati: porta COM, rete TCP, sensore UDP…</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">2</div>
+        <h4>Regola</h4>
+        <p>Definisci quale comando deve attivare quale azione, con filtri opzionali.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">3</div>
+        <h4>Destinazione</h4>
+        <p>I dati vengono inviati automaticamente al dispositivo o sistema giusto.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">✓</div>
+        <h4>Funziona</h4>
+        <p>ComRouter gira in background e gestisce tutto senza intervento umano.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="cases" id="casi-uso">
+  <div class="container">
+    <div class="section-label">Casi d'uso reali</div>
+    <h2 class="section-title">Chi lo usa e perché</h2>
+    <p class="section-sub">
+      Dalla piccola officina al laboratorio di ricerca: ecco come ComRouter risolve problemi concreti di ogni giorno.
+    </p>
+    <div class="cases-grid">
+
+      <!-- 1. Industria -->
+      <div class="case-card c-indigo">
+        <div class="case-header">
+          <div class="case-icon">🏭</div>
+          <div>
+            <h3>Automazione industriale</h3>
+            <p>Linee di produzione e macchinari CNC</p>
+          </div>
+        </div>
+        <div class="case-body">
+          <div class="case-scenario">
+            <strong>Situazione</strong>
+            Una fresatrice a controllo numerico invia via cavo seriale il codice del pezzo appena lavorato.
+            Il magazzino, su un altro PC in rete, deve ricevere l'avviso per scalare il pezzo dall'inventario.
+          </div>
+          <div class="case-scenario">
+            <strong>Con ComRouter</strong>
+            Il messaggio seriale viene ricevuto, riconosciuto e istantaneamente inoltrato al software di
+            magazzino via TCP — senza modificare né la macchina né il gestionale.
+          </div>
+          <span class="case-tag">Linee produzione · Magazzino · CNC</span>
+        </div>
+      </div>
+
+      <!-- 2. Controllo accessi -->
+      <div class="case-card c-green">
+        <div class="case-header">
+          <div class="case-icon">🚪</div>
+          <div>
+            <h3>Controllo accessi</h3>
+            <p>Tornelli, badge reader e centraline</p>
+          </div>
+        </div>
+        <div class="case-body">
+          <div class="case-scenario">
+            <strong>Situazione</strong>
+            Un lettore di badge all'ingresso invia il codice dipendente su porta RS-232. Il sistema
+            presenze su un server di rete deve registrare l'orario, e parallelamente un attuatore
+            fisico deve aprire il cancello.
+          </div>
+          <div class="case-scenario">
+            <strong>Con ComRouter</strong>
+            Allo stesso segnale in arrivo, ComRouter invia il codice badge al server presenze via TCP
+            <em>e</em> manda il comando di apertura all'attuatore — tutto in simultanea.
+          </div>
+          <span class="case-tag">Badge · Presenze · Cancelli</span>
+        </div>
+      </div>
+
+      <!-- 3. Laboratorio -->
+      <div class="case-card c-orange">
+        <div class="case-header">
+          <div class="case-icon">🔬</div>
+          <div>
+            <h3>Laboratorio di analisi</h3>
+            <p>Strumenti di misura e raccolta dati</p>
+          </div>
+        </div>
+        <div class="case-body">
+          <div class="case-scenario">
+            <strong>Situazione</strong>
+            Una bilancia di precisione e un analizzatore di temperatura inviano le misure su porte seriali
+            separate. I risultati devono finire in un foglio Excel su un PC condiviso, ma anche essere
+            visualizzati su un grande monitor in sala riunioni.
+          </div>
+          <div class="case-scenario">
+            <strong>Con ComRouter</strong>
+            Entrambi gli strumenti sono monitorati contemporaneamente. I dati vengono instradati al PC
+            Excel via rete e trasmessi via UDP al display della sala.
+          </div>
+          <span class="case-tag">Bilance · Analizzatori · Excel</span>
+        </div>
+      </div>
+
+      <!-- 4. Vendita al dettaglio -->
+      <div class="case-card c-sky">
+        <div class="case-header">
+          <div class="case-icon">🛒</div>
+          <div>
+            <h3>Punto vendita</h3>
+            <p>Casse, bilance e sistemi di etichettatura</p>
+          </div>
+        </div>
+        <div class="case-body">
+          <div class="case-scenario">
+            <strong>Situazione</strong>
+            La bilancia al banco del supermercato pesa il prodotto e invia il peso via RS-232.
+            La cassa deve ricevere il dato, e la stampante di etichette deve stampare automaticamente
+            il cartellino con prezzo e peso.
+          </div>
+          <div class="case-scenario">
+            <strong>Con ComRouter</strong>
+            Un solo peso in ingresso genera due azioni: aggiornamento cassa e stampa etichetta —
+            senza che il commesso debba fare nulla.
+          </div>
+          <span class="case-tag">GDO · Casse · Etichette</span>
+        </div>
+      </div>
+
+      <!-- 5. Building automation -->
+      <div class="case-card c-purple">
+        <div class="case-header">
+          <div class="case-icon">🏢</div>
+          <div>
+            <h3>Gestione edificio</h3>
+            <p>HVAC, luci e sistema di supervisione</p>
+          </div>
+        </div>
+        <div class="case-body">
+          <div class="case-scenario">
+            <strong>Situazione</strong>
+            Una centralina di climatizzazione industriale comunica via seriale. Il sistema BMS
+            (Building Management System) su rete vuole ricevere allarmi e parametri operativi,
+            ma il protocollo è incompatibile.
+          </div>
+          <div class="case-scenario">
+            <strong>Con ComRouter</strong>
+            ComRouter legge i messaggi della centralina e li traduce in comandi TCP comprensibili dal BMS,
+            abilitando il controllo centralizzato senza sostituire l'impianto esistente.
+          </div>
+          <span class="case-tag">HVAC · BMS · Allarmi</span>
+        </div>
+      </div>
+
+      <!-- 6. Ricerca e università -->
+      <div class="case-card c-rose">
+        <div class="case-header">
+          <div class="case-icon">📡</div>
+          <div>
+            <h3>Ricerca e prototipazione</h3>
+            <p>Banchi prova, test e acquisizione dati</p>
+          </div>
+        </div>
+        <div class="case-body">
+          <div class="case-scenario">
+            <strong>Situazione</strong>
+            Un banco prova universitario ha un oscilloscopio, un generatore di segnale e un data logger
+            su porte seriali diverse. Il software di tesi deve ricevere tutti e tre i flussi
+            contemporaneamente.
+          </div>
+          <div class="case-scenario">
+            <strong>Con ComRouter</strong>
+            Le tre sorgenti vengono aggregate e inoltrate al software via UDP. I dati arrivano
+            etichettati per sorgente, pronti per l'analisi — senza scrivere una riga di codice.
+          </div>
+          <span class="case-tag">Università · Banchi prova · IoT</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="funzionalita">
+  <div class="container">
+    <div class="section-label">Funzionalità</div>
+    <h2 class="section-title">Tutto ciò che serve, niente di superfluo</h2>
+    <p class="section-sub">Progettato per durare in produzione senza interventi di manutenzione.</p>
+    <div class="feat-grid">
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Avvio automatico</h4>
+          <p>Parte con Windows o come servizio Linux — sempre attivo, anche dopo un riavvio.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Monitoraggio in tempo reale</h4>
+          <p>Log live da qualsiasi browser sulla rete: vedi i dati che passano istante per istante.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Regole multiple</h4>
+          <p>Definisci comportamenti diversi per comandi diversi, con filtri precisi su ogni messaggio.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Interfaccia web inclusa</h4>
+          <p>Configura tutto da browser, anche da tablet, senza installare nulla sul client.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Funziona su Raspberry Pi</h4>
+          <p>Deploy su Linux ARM64: ideale su un piccolo computer dedicato in quadro elettrico.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Client desktop opzionale</h4>
+          <p>Applicazione Windows per chi preferisce una interfaccia nativa sul proprio PC.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Estendibile con plugin</h4>
+          <p>Nuovi protocolli aggiungibili senza toccare il nucleo — basta copiare una DLL.</p>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"></div>
+        <div>
+          <h4>Nessun cloud richiesto</h4>
+          <p>Tutto gira in locale. I tuoi dati non escono mai dalla tua rete.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section class="download" id="download">
+  <div class="container">
+    <div class="section-label">Download</div>
+    <h2 class="section-title">Pronto in cinque minuti</h2>
+    <p class="section-sub">Scegli la versione per il tuo sistema operativo. Nessuna registrazione richiesta.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-os">🪟</div>
+        <h3>Windows</h3>
+        <p>Windows 10 / 11 — x64<br>Installer guidato, include tutto.</p>
+        <a href="https://www.jbtechnology.co.uk/public/comRouter/ComRouterSetup.exe" class="btn-dl">
+          Scarica Setup (.exe)
+        </a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-os">🐧</div>
+        <h3>Linux ARM64</h3>
+        <p>Raspberry Pi 4/5 · Orange Pi<br>Archivi con script di installazione systemd.</p>
+        <a href="https://www.jbtechnology.co.uk/public/comRouter/ComRouterLinux-arm64.tar.gz" class="btn-dl">
+          Scarica tar.gz
+        </a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-os">📄</div>
+        <h3>Versione corrente</h3>
+        <p>Controlla l'ultima versione disponibile e le note di rilascio.</p>
+        <a href="https://www.jbtechnology.co.uk/public/comRouter/version.json" class="btn-dl" target="_blank">
+          version.json
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    &copy; 2026 <a href="https://www.jbtechnology.co.uk">JBTechnology</a> —
+    ComRouter è software libero distribuito senza garanzie.
+    Per assistenza: <a href="mailto:info@jbtechnology.co.uk">info@jbtechnology.co.uk</a>
+  </p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+@CommRouter.WebServer_HostAddress = http://localhost:5025
+
+GET {{CommRouter.WebServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

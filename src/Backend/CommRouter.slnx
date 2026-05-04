@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CommRouter.Core/CommRouter.Core.csproj" />
+  <Project Path="CommRouter.Interfaces/CommRouter.Interfaces.csproj" />
+  <Project Path="CommRouter.WebServer/CommRouter.WebServer.csproj" />
+  <Project Path="CommRouter/CommRouter.csproj" />
+</Solution>
