@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.15" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.*" />
+    <ProjectReference Include="..\..\..\..\licenseManager\src\backend\LicenseManager.Sdk\LicenseManager.Sdk.csproj" />
   </ItemGroup>
 
   <ItemGroup>

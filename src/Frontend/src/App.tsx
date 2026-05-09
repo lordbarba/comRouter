@@ -43,6 +43,11 @@ export function App() {
               Receivers
             </NavLink>
           </li>
+          <li>
+            <NavLink to="/license" className={({ isActive }: NavLinkRenderProps) => `${styles.navItem} ${isActive ? styles.navActive : ''}`}>
+              Licenza
+            </NavLink>
+          </li>
         </ul>
         <div className={styles.sidebarFooter}>
           <span className={`${styles.hubStatus} ${connected ? styles.hubConnected : styles.hubDisconnected}`}>

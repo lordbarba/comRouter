@@ -11,6 +11,8 @@ import type {
   UpdateReceiverRequest,
   CreateMatchRequest,
   UpdateMatchRequest,
+  LicenseStatusDto,
+  LicenseActionResultDto,
 } from '../types/api';
 
 const api = axios.create({
@@ -61,4 +63,20 @@ export const matchesApi = {
   create: (body: CreateMatchRequest) => api.post<MatchDto>('/matches', body).then(r => r.data),
   update: (id: string, body: UpdateMatchRequest) => api.put<MatchDto>(`/matches/${id}`, body).then(r => r.data),
   remove: (id: string) => api.delete(`/matches/${id}`),
+};
+
+// ─── License ──────────────────────────────────────────────────────────────────
+
+const licenseAxios = axios.create({ baseURL: '/api' });
+
+export const licenseApi = {
+  getStatus: () => licenseAxios.get<LicenseStatusDto>('/license/status').then(r => r.data),
+  pickup: () => licenseAxios.post<LicenseActionResultDto>('/license/pickup').then(r => r.data),
+  importLic: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return licenseAxios.post<LicenseActionResultDto>('/license/import', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
 };

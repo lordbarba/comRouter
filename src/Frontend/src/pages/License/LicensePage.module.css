@@ -1,0 +1,76 @@
+.root { padding: 20px; display: flex; flex-direction: column; gap: 16px; max-width: 680px; }
+.heading { margin: 0 0 4px; font-size: 1.25rem; font-weight: 600; }
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardRow { display: flex; align-items: center; gap: 12px; }
+.cardRowHash { display: flex; flex-direction: column; gap: 4px; }
+
+.label { font-size: 0.8rem; font-weight: 600; color: #6b7280; min-width: 120px; text-transform: uppercase; letter-spacing: 0.04em; }
+.value { font-size: 0.9rem; color: #111827; }
+
+.badge {
+  border-radius: 12px;
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.statusValid  { background: #dcfce7; color: #15803d; }
+.statusWarn   { background: #fef9c3; color: #854d0e; }
+.statusError  { background: #fee2e2; color: #b91c1c; }
+
+.hash {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #374151;
+  background: #f3f4f6;
+  border-radius: 4px;
+  padding: 4px 8px;
+  word-break: break-all;
+}
+
+.sectionTitle { margin: 0 0 2px; font-size: 1rem; font-weight: 600; color: #111827; }
+
+.hint { margin: 0; font-size: 0.85rem; color: #6b7280; }
+
+.actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.btnPrimary {
+  padding: 8px 18px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.btnPrimary:hover:not(:disabled) { background: #2563eb; }
+.btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btnSecondary {
+  padding: 8px 18px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+.btnSecondary:hover:not(:disabled) { background: #f9fafb; }
+.btnSecondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.fileInput { font-size: 0.85rem; }
+
+.divider { border: none; border-top: 1px solid #e5e7eb; margin: 4px 0; }
+
+.successMsg { margin: 0; font-size: 0.85rem; color: #15803d; font-weight: 500; }
+.errMsg     { margin: 0; font-size: 0.85rem; color: #b91c1c; font-weight: 500; }
+.loading    { color: #6b7280; font-style: italic; }

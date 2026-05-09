@@ -45,10 +45,22 @@ comRouter/
 ## Dipendenze di progetto
 
 ```
-CommRouter (WinForms)    → CommRouter.Interfaces, CommRouter.Core
-CommRouter.WebServer     → CommRouter.Interfaces, CommRouter.Core
+CommRouter (WinForms)    → CommRouter.Interfaces, CommRouter.Core, JBFormLibrary
+CommRouter.WebServer     → CommRouter.Interfaces, CommRouter.Core, LicenseManager.Sdk
 CommRouter.Core          → CommRouter.Interfaces
 CommRouter.Interfaces    → (nessuna)
+```
+
+**Dipendenze esterne (project reference ai workspace locali fino al prossimo publish NuGet):**
+- `LicenseManager.Sdk` → `..\..\..\..\licenseManager\src\backend\LicenseManager.Sdk\LicenseManager.Sdk.csproj`
+- `JBFormLibrary`       → `..\..\..\..\jblibrary\src\JBFormLibrary\JBFormLibrary.csproj`
+
+Quando entrambi i package vengono ripubblicati su GitHub Packages, sostituire con:
+```xml
+<!-- CommRouter.WebServer.csproj -->
+<PackageReference Include="jbTechnology.LicenseManager.Sdk" Version="x.y.z" />
+<!-- CommRouter.csproj -->
+<PackageReference Include="JBFormLibrary" Version="x.y.z" />
 ```
 
 ---
@@ -103,15 +115,72 @@ Il profilo `http` è in `CommRouter.WebServer/Properties/launchSettings.json`.
 
 ## Architettura WebServer
 
-**`Program.cs`**: DI, CORS, Swagger, SignalR hub su `/hubs/router`, SPA fallback su `wwwroot/`.
+**`Program.cs`**: DI, CORS, Swagger, SignalR hub su `/hubs/router`, SPA fallback su `wwwroot/`. Registra `AddLicenseManager(...)`, il singleton `LicenseState` e il middleware `LicenseMiddleware`.
 
-**`RouterHostedService`**: all'avvio chiama `PluginLoader.Scan(AppContext.BaseDirectory)` per scoprire i plugin, poi carica config JSON (o migra da XML), poi avvia se `AutoStart = true`.
+**`RouterHostedService`**: all'avvio esegue `ILicenseService.InitializeAsync` + `ValidateAsync`, aggiorna `LicenseState`, poi carica config JSON (o migra da XML). `AutoStart` viene eseguito **solo** se la licenza è valida.
 
-**Controllers**: `RouterController`, `ListenersController`, `ReceiversController`, `MatchesController`, `TypesController`.
+**Controllers**: `RouterController`, `ListenersController`, `ReceiversController`, `MatchesController`, `TypesController`, `LicenseController`.
+
+**`LicenseMiddleware`**: se `LicenseState.IsValid == false` risponde `402 Payment Required` su tutti gli endpoint `/api/*` tranne `/api/license/*`.
 
 **SignalR events** (broadcast a tutti i client):
 - `StateChanged` — su ogni modifica strutturale (add/remove/start/stop)
 - `LogEntry(LogEntryDto)` — streaming log in tempo reale
+
+---
+
+## Gestione licenza
+
+ComRouter usa `LicenseManager.Sdk` (jbTechnology) per la protezione della licenza.
+
+### Flusso Windows
+```
+Program.cs → TryStartWebServer → WaitForWebServer
+  → CheckLicense() → GET /api/license/status
+      ├─ IsValid = true  → frmMain (normale)
+      └─ IsValid = false → frmJBLicenseInfo (da JBFormLibrary)
+                             ├─ "Apri browser" → WebActivationUrl (dal server)
+                             ├─ "Verifica"     → POST /api/license/pickup
+                             └─ "Importa .lic" → POST /api/license/import
+```
+
+### Flusso Linux
+- `RouterHostedService.StartAsync` valida la licenza → se non valida il router **non parte** ma il WebServer rimane vivo
+- Solo `/api/license/*` risponde; tutto il resto ritorna 402
+
+### Endpoint licenza (`/api/license/*` — sempre accessibili)
+| Endpoint | Descrizione |
+|---|---|
+| `GET /api/license/status` | Stato, machine hash, URL attivazione, tier, scadenza |
+| `POST /api/license/pickup` | Verifica se attivazione web completata (chiama `TryPickupActivationAsync`) |
+| `POST /api/license/import` | Importa file `.lic` air-gapped (multipart/form-data, campo `file`) |
+
+### Configurazione (`appsettings.json`)
+```json
+"LicenseManager": {
+  "ApiBaseUrl": "https://license.jbtechnology.it",
+  "ProductId":  "comrouter",
+  "ClientVersion": "1.0.0",
+  "WebActivationBaseUrl": "https://license.jbtechnology.it"
+}
+```
+
+### Classi chiave
+- `LicenseState` — singleton (`public sealed`); `IsValid` + `ValidationStatus`; aggiornato da `RouterHostedService` e da `ILicenseService.StatusChanged`
+- `LicenseMiddleware` — legge `LicenseState` senza I/O; path esenti: `/api/license/*`, `/hubs/*`, `/swagger/*`, path statici
+- `LicenseController` — mappa `ValidationResult` → `LicenseStatusDto`; `ImportLicFile` salva su file temporaneo e lo cancella nel `finally`
+
+### DTOs (in `CommRouter.Interfaces/Dto/ApiDtos.cs`)
+```csharp
+record LicenseStatusDto(bool IsValid, string Status, string ProductId,
+    string MachineHash, string WebActivationUrl,
+    string Tier, DateTime? ExpiresAt, string SerialNumber,
+    string CustomerName, string CustomerEmail);
+
+record LicenseActionResultDto(bool Success, string Message);
+```
+
+`Status` può essere: `Valid`, `ExpiringSoon`, `OfflineValid`, `Expired`, `Revoked`, `Suspended`, `NotActivated`, `Unknown`.
 
 ---
 
@@ -196,7 +265,7 @@ src/
 
 Comunica **solo via HTTP REST e SignalR** su `localhost:5025`. Non referenzia `CommRouter.WebServer`.
 
-- `Program.cs` — entry point: cerca `server\CommRouter.WebServer.exe` accanto all'exe; se presente lo avvia e attende `GET /api/router/status` (max 30s) prima di aprire `frmMain`. In dev il WebServer è già avviato separatamente.
+- `Program.cs` — entry point: avvia WebServer (se in modalità installata), attende readiness, controlla la licenza via `GET /api/license/status`. Se non valida mostra `frmJBLicenseInfo` (da `JBFormLibrary`) prima di aprire `frmMain`. Se dopo il dialog la licenza è ancora non valida, l'app chiude.
 - `frmMain` — form principale: ToolStrip (start/stop), TabControl (Matrice/Listeners/Receivers/Log), StatusStrip
 - `frmMatch` — dialog crea/modifica/elimina Match
 - `frmEndpoint` — dialog crea/modifica Listener o Receiver (carica pannello config dinamico via `ControlPanelFactory`)
@@ -256,11 +325,14 @@ sudo bash comRouter_install.sh
 - [x] deploy.ps1 — Windows installer + Linux ARM64 tar.gz + FTP + git push
 - [x] installer.iss — InnoSetup per Windows x64 (CommRouter.exe + server\)
 - [x] comRouter_install.sh — installazione Linux ARM64 con systemd unit
+- [x] Gestione licenza — LicenseManager.Sdk integrato in WebServer; middleware 402; LicenseController; frmJBLicenseInfo in WinForms
 
 ## TODO / Possibili miglioramenti
 
 - [ ] Testare end-to-end con hardware reale (es. scheda relè USB SNT319 su porta COM)
-- [ ] Aggiungere autenticazione API (Bearer token / API key)
+- [ ] Creare prodotto `comrouter` sul server LicenseManager e testare flusso attivazione
+- [ ] Passare da project reference a NuGet package per LicenseManager.Sdk e JBFormLibrary dopo prossimo deploy
+- [ ] Aggiungere pagina licenza nel frontend React (chiama `GET /api/license/status`)
 - [ ] Aggiungere logging su file (Serilog)
 - [ ] Unit test su AppProtocol e Match
 - [ ] Splash screen WinForms durante attesa avvio WebServer

@@ -3,6 +3,7 @@ import { App } from '../App';
 import { MatrixPage } from '../pages/Matrix/MatrixPage';
 import { ListenersPage } from '../pages/Listeners/ListenersPage';
 import { ReceiversPage } from '../pages/Receivers/ReceiversPage';
+import { LicensePage } from '../pages/License/LicensePage';
 
 export const router = createBrowserRouter([
   {
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
       { index: true, element: <MatrixPage /> },
       { path: 'listeners', element: <ListenersPage /> },
       { path: 'receivers', element: <ReceiversPage /> },
+      { path: 'license', element: <LicensePage /> },
     ],
   },
 ]);

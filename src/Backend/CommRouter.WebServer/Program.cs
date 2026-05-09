@@ -1,7 +1,9 @@
 using CommRouter.Core;
 using CommRouter.Core.Settings;
 using CommRouter.WebServer.Hubs;
+using CommRouter.WebServer.Middleware;
 using CommRouter.WebServer.Services;
+using LicenseManager.Sdk;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,12 +22,18 @@ builder.Services.AddSingleton<XmlMigrationReader>();
 builder.Services.AddSingleton<AppSettings>();
 builder.Services.AddHostedService<RouterHostedService>();
 
+// ─── Licenza ─────────────────────────────────────────────────────────────────
+builder.Services.AddLicenseManager(opts =>
+    builder.Configuration.GetSection("LicenseManager").Bind(opts));
+builder.Services.AddSingleton<LicenseState>();
+
 var app = builder.Build();
 
 // ─── Pipeline ────────────────────────────────────────────────────────────────
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
+app.UseMiddleware<LicenseMiddleware>();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();

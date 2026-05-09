@@ -46,3 +46,18 @@ public record CreateReceiverRequest(string Name, string TypeName, string Assembl
 public record UpdateReceiverRequest(string Name, Dictionary<string, string> Config);
 public record CreateMatchRequest(string Name, Guid ListenerId, Guid ReceiverId, bool Enabled, List<string> ListenerCommands, List<string> ReceiverCommands);
 public record UpdateMatchRequest(string Name, bool Enabled, List<string> ListenerCommands, List<string> ReceiverCommands);
+
+// License
+public record LicenseStatusDto(
+    bool IsValid,
+    string Status,          // "Valid" | "ExpiringSoon" | "OfflineValid" | "Expired" | "Revoked" | "Suspended" | "NotActivated" | "Unknown"
+    string ProductId,
+    string MachineHash,
+    string WebActivationUrl,
+    string Tier,
+    DateTime? ExpiresAt,
+    string SerialNumber,
+    string CustomerName,
+    string CustomerEmail);
+
+public record LicenseActionResultDto(bool Success, string Message);

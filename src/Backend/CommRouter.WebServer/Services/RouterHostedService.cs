@@ -1,6 +1,7 @@
 using CommRouter.Core;
 using CommRouter.Core.Settings;
 using CommRouter.WebServer.Hubs;
+using LicenseManager.Sdk.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CommRouter.WebServer.Services;
@@ -17,6 +18,8 @@ internal sealed class RouterHostedService : IHostedService
     private readonly XmlMigrationReader _xml;
     private readonly IHubContext<RouterHub> _hub;
     private readonly PluginLoader _pluginLoader;
+    private readonly ILicenseService _licenseService;
+    private readonly LicenseState _licenseState;
     private readonly ILogger<RouterHostedService> _logger;
 
     private static string ConfigPath => Path.Combine(
@@ -34,19 +37,43 @@ internal sealed class RouterHostedService : IHostedService
         XmlMigrationReader xml,
         IHubContext<RouterHub> hub,
         PluginLoader pluginLoader,
+        ILicenseService licenseService,
+        LicenseState licenseState,
         ILogger<RouterHostedService> logger)
     {
-        _router = router;
-        _settings = settings;
-        _json = json;
-        _xml = xml;
-        _hub = hub;
-        _pluginLoader = pluginLoader;
-        _logger = logger;
+        _router         = router;
+        _settings       = settings;
+        _json           = json;
+        _xml            = xml;
+        _hub            = hub;
+        _pluginLoader   = pluginLoader;
+        _licenseService = licenseService;
+        _licenseState   = licenseState;
+        _logger         = logger;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
+        // ── Licenza ──────────────────────────────────────────────────────────
+        await _licenseService.InitializeAsync(cancellationToken);
+        var licenseResult = await _licenseService.ValidateAsync(cancellationToken);
+        _licenseState.IsValid          = licenseResult.IsValid;
+        _licenseState.ValidationStatus = licenseResult.Status;
+
+        // Aggiorna LicenseState ad ogni cambio di stato (es. revalidazione background)
+        _licenseService.StatusChanged += (_, result) =>
+        {
+            _licenseState.IsValid          = result.IsValid;
+            _licenseState.ValidationStatus = result.Status;
+        };
+
+        if (!licenseResult.IsValid)
+            _logger.LogWarning(
+                "Licenza non valida ({Status}). Il router non verrà avviato automaticamente. " +
+                "Usare GET /api/license/status per attivare.",
+                licenseResult.Status);
+
+        // ── Plugin ───────────────────────────────────────────────────────────
         // Discover plugin types in the app directory (finds CommRouter.Core.dll + any external plugins)
         _pluginLoader.Scan(AppContext.BaseDirectory);
         _logger.LogInformation("Plugins: {L} listeners, {R} receivers",
@@ -55,6 +82,7 @@ internal sealed class RouterHostedService : IHostedService
         // Wire state-changed -> broadcast to all SignalR clients
         _router.StateChanged += OnStateChanged;
 
+        // ── Config ───────────────────────────────────────────────────────────
         // Load config: JSON preferred, fall back to XML migration
         if (File.Exists(ConfigPath))
         {
@@ -73,9 +101,14 @@ internal sealed class RouterHostedService : IHostedService
             catch (Exception ex) { _logger.LogError(ex, "Failed migrating XML config"); }
         }
 
-        if (_settings.AutoStart) _router.StartAll();
-
-        return Task.CompletedTask;
+        // ── Avvio automatico (solo se licenza valida) ─────────────────────
+        if (_settings.AutoStart)
+        {
+            if (_licenseState.IsValid)
+                _router.StartAll();
+            else
+                _logger.LogWarning("AutoStart ignorato: licenza non valida.");
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

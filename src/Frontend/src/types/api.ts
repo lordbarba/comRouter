@@ -83,6 +83,26 @@ export interface UpdateMatchRequest {
   receiverCommands: string[];
 }
 
+// ─── License ──────────────────────────────────────────────────────────────────
+
+export interface LicenseStatusDto {
+  isValid: boolean;
+  status: 'Valid' | 'ExpiringSoon' | 'OfflineValid' | 'Expired' | 'Revoked' | 'Suspended' | 'NotActivated' | 'Unknown';
+  productId: string;
+  machineHash: string;
+  webActivationUrl: string;
+  tier: string;
+  expiresAt: string | null;
+  serialNumber: string;
+  customerName: string;
+  customerEmail: string;
+}
+
+export interface LicenseActionResultDto {
+  success: boolean;
+  message: string;
+}
+
 // ─── SignalR ──────────────────────────────────────────────────────────────────
 
 export interface LogEntry {

@@ -27,7 +27,8 @@ function Start-InNewWindow {
     )
 }
 Write-Host "Build soluzione .NET..." -ForegroundColor Cyan
-Push-Location $backenddotnet build CommRouter.slnx --nologo -v quiet
+Push-Location $backend
+dotnet build CommRouter.slnx --nologo -v quiet
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build fallita. Correggere gli errori prima di avviare." -ForegroundColor Red
     Pop-Location
